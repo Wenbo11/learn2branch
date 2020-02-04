@@ -326,7 +326,6 @@ if __name__ == '__main__':
         # instances_valid = glob.glob(f'../data/instances/setcover/valid_{nrows}r_{ncols}c_{dens}d_{mc}mc_{seed}se_classified/{group}/*/*.lp')
         # instances_test = glob.glob(f'../data/instances/setcover/test_{nrows}r_{ncols}c_{dens}d_{mc}mc_{seed}se_classified/{group}/*/*.lp')
         out_dir = f'../data/samples/setcover/gnn_data/{nrows}r_{ncols}c_{dens}d_{mc}mc_{seed}se_classified/{group}'
-        utilities.mkdirs(out_dir)
 
     elif args.problem == 'cauctions':
         instances_train = glob.glob('data/instances/cauctions/train_100_500/*.lp')
@@ -355,7 +354,7 @@ if __name__ == '__main__':
     # print(f"{len(instances_test)} test instances for {test_size} samples")
 
     # create output directory, throws an error if it already exists
-    os.makedirs(out_dir)
+    utilities.mkdirs(out_dir)
 
     rng = np.random.RandomState(args.seed)
     collect_samples(instances_train, out_dir + '/train', rng, train_size,
