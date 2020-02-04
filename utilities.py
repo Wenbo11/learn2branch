@@ -4,6 +4,7 @@ import scipy.sparse as sp
 import pyscipopt as scip
 import pickle
 import gzip
+import os
 
 def log(str, logfile=None):
     str = f'[{datetime.datetime.now()}] {str}'
