@@ -294,23 +294,10 @@ def collect_samples(instances, out_dir, rng, n_samples, n_jobs,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'problem',
-        help='MILP instance type to process.',
-        choices=['setcover', 'cauctions', 'facilities', 'indset'],
-    )
-    parser.add_argument(
-        '-s', '--seed',
-        help='Random generator seed.',
-        type=utilities.valid_seed,
-        default=0,
-    )
-    parser.add_argument(
-        '-j', '--njobs',
-        help='Number of parallel jobs.',
-        type=int,
-        default=1,
-    )
+    parser.add_argument('problem', help='MILP instance type to process.',
+                        choices=['setcover', 'cauctions', 'facilities', 'indset'])
+    parser.add_argument('-s', '--seed', help='Random generator seed.', type=utilities.valid_seed, default=0)
+    parser.add_argument('-j', '--njobs', help='Number of parallel jobs.', type=int, default=1)
     args = parser.parse_args()
 
     print(f"seed {args.seed}")

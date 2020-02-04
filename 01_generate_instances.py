@@ -516,26 +516,23 @@ def generate_capacited_facility_location(random, filename, n_customers, n_facili
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'problem',
-        help='MILP instance type to process.',
-        choices=['setcover', 'cauctions', 'facilities', 'indset'],
-    )
-    parser.add_argument(
-        '-s', '--seed',
-        help='Random generator seed (default 0).',
-        type=utilities.valid_seed,
-        default=0,
-    )
+    parser.add_argument('problem', help='MILP instance type to process.',
+                        choices=['setcover', 'cauctions', 'facilities', 'indset'])
+    parser.add_argument('-s', '--seed', help='Random generator seed (default 0).', type=utilities.valid_seed, default=0)
+    parser.add_argument('-r', '--nrows', help='#rows.', type=int, default=120)
+    parser.add_argument('-c', '--ncols', help='#cols.', type=int, default=240)
+    parser.add_argument('-mc', '--maxcoefficient', type=int, help='max coefficient of instances')
+    parser.add_argument('-d', '--des', help='density.', type=float, default=0.1)
     args = parser.parse_args()
 
     rng = np.random.RandomState(args.seed)
 
     if args.problem == 'setcover':
-        nrows = 500
-        ncols = 1000
-        dens = 0.05
-        max_coef = 100
+        nrows = args.nrows
+        ncols = args.ncols
+        dens = args.des
+        max_coef = args.maxcoefficient
+        seed = args.seed
 
         filenames = []
         nrowss = []
@@ -544,7 +541,7 @@ if __name__ == '__main__':
 
         # train instances
         n = 10000
-        lp_dir = f'data/instances/setcover/train_{nrows}r_{ncols}c_{dens}d'
+        lp_dir = f'data/instances/setcover/train_{nrows}r_{ncols}c_{dens}d_{seed}se'
         print(f"{n} instances in {lp_dir}")
         os.makedirs(lp_dir)
         filenames.extend([os.path.join(lp_dir, f'instance_{i+1}.lp') for i in range(n)])
@@ -554,7 +551,7 @@ if __name__ == '__main__':
 
         # validation instances
         n = 2000
-        lp_dir = f'data/instances/setcover/valid_{nrows}r_{ncols}c_{dens}d'
+        lp_dir = f'data/instances/setcover/valid_{nrows}r_{ncols}c_{dens}d_{seed}se'
         print(f"{n} instances in {lp_dir}")
         os.makedirs(lp_dir)
         filenames.extend([os.path.join(lp_dir, f'instance_{i+1}.lp') for i in range(n)])
@@ -564,8 +561,7 @@ if __name__ == '__main__':
 
         # small transfer instances
         n = 100
-        nrows = 500
-        lp_dir = f'data/instances/setcover/transfer_{nrows}r_{ncols}c_{dens}d'
+        lp_dir = f'data/instances/setcover/transfer_{nrows}r_{ncols}c_{dens}d_{seed}se'
         print(f"{n} instances in {lp_dir}")
         os.makedirs(lp_dir)
         filenames.extend([os.path.join(lp_dir, f'instance_{i+1}.lp') for i in range(n)])
@@ -575,8 +571,8 @@ if __name__ == '__main__':
 
         # medium transfer instances
         n = 100
-        nrows = 1000
-        lp_dir = f'data/instances/setcover/transfer_{nrows}r_{ncols}c_{dens}d'
+        nrows_medium = nrows*2
+        lp_dir = f'data/instances/setcover/transfer_{nrows_medium}r_{ncols}c_{dens}d_{seed}se'
         print(f"{n} instances in {lp_dir}")
         os.makedirs(lp_dir)
         filenames.extend([os.path.join(lp_dir, f'instance_{i+1}.lp') for i in range(n)])
@@ -586,8 +582,8 @@ if __name__ == '__main__':
 
         # big transfer instances
         n = 100
-        nrows = 2000
-        lp_dir = f'data/instances/setcover/transfer_{nrows}r_{ncols}c_{dens}d'
+        nrows_big = nrows*4
+        lp_dir = f'data/instances/setcover/transfer_{nrows_big}r_{ncols}c_{dens}d_{seed}se'
         print(f"{n} instances in {lp_dir}")
         os.makedirs(lp_dir)
         filenames.extend([os.path.join(lp_dir, f'instance_{i+1}.lp') for i in range(n)])
@@ -597,9 +593,7 @@ if __name__ == '__main__':
 
         # test instances
         n = 2000
-        nrows = 500
-        ncols = 1000
-        lp_dir = f'data/instances/setcover/test_{nrows}r_{ncols}c_{dens}d'
+        lp_dir = f'data/instances/setcover/test_{nrows}r_{ncols}c_{dens}d_{seed}se'
         print(f"{n} instances in {lp_dir}")
         os.makedirs(lp_dir)
         filenames.extend([os.path.join(lp_dir, f'instance_{i+1}.lp') for i in range(n)])
