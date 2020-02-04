@@ -314,9 +314,9 @@ if __name__ == '__main__':
 
     print(f"seed {args.seed}")
 
-    train_size = 100000
-    valid_size = 20000
-    test_size = 20000
+    train_size = 10000
+    valid_size = 2000
+    test_size = 2000
     exploration_strategy = 'pscost'
     node_record_prob = 0.05
     time_limit = 3600
