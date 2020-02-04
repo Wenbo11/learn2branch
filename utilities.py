@@ -385,3 +385,18 @@ def load_flat_samples(filename, feat_type, label_type, augment_feats, normalize_
         raise ValueError(f"Invalid label type: '{label_type}'")
 
     return cand_states, cand_labels, best_cand_idx
+
+def mkdir(path):
+    try:
+        os.stat(path)
+    except:
+        os.mkdir(path)
+        print('making dir')
+
+
+def mkdirs(path):
+    try:
+        os.stat(path)
+    except:
+        os.makedirs(path)
+        print('making dirs')
