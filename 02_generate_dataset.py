@@ -298,7 +298,19 @@ if __name__ == '__main__':
                         choices=['setcover', 'cauctions', 'facilities', 'indset'])
     parser.add_argument('-s', '--seed', help='Random generator seed.', type=utilities.valid_seed, default=0)
     parser.add_argument('-j', '--njobs', help='Number of parallel jobs.', type=int, default=1)
+    parser.add_argument('-r', '--nrows', help='#rows.', type=int)
+    parser.add_argument('-c', '--ncols', help='#cols.', type=int)
+    parser.add_argument('-d', '--dens', help='density.', type=float)
+    parser.add_argument('-mc', '--maxcoefficient', type=int, help='max coefficient of instances')
+    parser.add_argument('--group', type=str, default='easy', help='instances class')
+
     args = parser.parse_args()
+    nrows = args.nrows
+    ncols = args.ncols
+    dens = args.dens
+    mc = args.maxcoefficient
+    seed = args.seed
+    group = args.group
 
     print(f"seed {args.seed}")
 
@@ -310,10 +322,11 @@ if __name__ == '__main__':
     time_limit = 3600
 
     if args.problem == 'setcover':
-        instances_train = glob.glob('data/instances/setcover/train_500r_1000c_0.05d/*.lp')
-        instances_valid = glob.glob('data/instances/setcover/valid_500r_1000c_0.05d/*.lp')
-        instances_test = glob.glob('data/instances/setcover/test_500r_1000c_0.05d/*.lp')
-        out_dir = 'data/samples/setcover/500r_1000c_0.05d'
+        instances_train = glob.glob(f'../data/instances/setcover/train_{nrows}r_{ncols}c_{dens}d_{mc}mc_{seed}se_classified/{group}/*/*.lp')
+        # instances_valid = glob.glob(f'../data/instances/setcover/valid_{nrows}r_{ncols}c_{dens}d_{mc}mc_{seed}se_classified/{group}/*/*.lp')
+        # instances_test = glob.glob(f'../data/instances/setcover/test_{nrows}r_{ncols}c_{dens}d_{mc}mc_{seed}se_classified/{group}/*/*.lp')
+        out_dir = f'../data/samples/setcover/gnn_data/{nrows}r_{ncols}c_{dens}d_{mc}mc_{seed}se_classified/{group}'
+        utilities.mkdirs(out_dir)
 
     elif args.problem == 'cauctions':
         instances_train = glob.glob('data/instances/cauctions/train_100_500/*.lp')
@@ -338,8 +351,8 @@ if __name__ == '__main__':
         raise NotImplementedError
 
     print(f"{len(instances_train)} train instances for {train_size} samples")
-    print(f"{len(instances_valid)} validation instances for {valid_size} samples")
-    print(f"{len(instances_test)} test instances for {test_size} samples")
+    # print(f"{len(instances_valid)} validation instances for {valid_size} samples")
+    # print(f"{len(instances_test)} test instances for {test_size} samples")
 
     # create output directory, throws an error if it already exists
     os.makedirs(out_dir)
@@ -350,14 +363,14 @@ if __name__ == '__main__':
                     query_expert_prob=node_record_prob,
                     time_limit=time_limit)
 
-    rng = np.random.RandomState(args.seed + 1)
-    collect_samples(instances_valid, out_dir + '/valid', rng, test_size,
-                    args.njobs, exploration_policy=exploration_strategy,
-                    query_expert_prob=node_record_prob,
-                    time_limit=time_limit)
+    # rng = np.random.RandomState(args.seed + 1)
+    # collect_samples(instances_valid, out_dir + '/valid', rng, test_size,
+    #                 args.njobs, exploration_policy=exploration_strategy,
+    #                 query_expert_prob=node_record_prob,
+    #                 time_limit=time_limit)
 
-    rng = np.random.RandomState(args.seed + 2)
-    collect_samples(instances_test, out_dir + '/test', rng, test_size,
-                    args.njobs, exploration_policy=exploration_strategy,
-                    query_expert_prob=node_record_prob,
-                    time_limit=time_limit)
+    # rng = np.random.RandomState(args.seed + 2)
+    # collect_samples(instances_test, out_dir + '/test', rng, test_size,
+    #                 args.njobs, exploration_policy=exploration_strategy,
+    #                 query_expert_prob=node_record_prob,
+    #                 time_limit=time_limit)
