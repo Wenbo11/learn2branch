@@ -141,17 +141,17 @@ if __name__ == '__main__':
 
     result_file = f"{args.problem}_{time.strftime('%Y%m%d-%H%M%S')}.csv"
     instances = []
-    seeds = [0, 1, 2, 3, 4]
-    gcnn_models = ['baseline']
+    seeds = [0]
+    gcnn_models = []
     other_models = ['extratrees_gcnn_agg', 'lambdamart_khalil', 'svmrank_khalil']
     internal_branchers = ['relpscost']
-    time_limit = 3600
+    time_limit = 1200
 
     if args.problem == 'setcover':
-        instances += [{'type': 'small', 'path': f"data/instances/setcover/transfer_500r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
-        instances += [{'type': 'medium', 'path': f"data/instances/setcover/transfer_1000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
-        instances += [{'type': 'big', 'path': f"data/instances/setcover/transfer_2000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
-        gcnn_models += ['mean_convolution', 'no_prenorm']
+        instances += [{'type': 'small', 'path': f"data/instances/setcover/transfer_500r_1000c_0.05d/instance_{i+1}.lp"} for i in range(100)]
+        # instances += [{'type': 'medium', 'path': f"data/instances/setcover/transfer_1000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
+        # instances += [{'type': 'big', 'path': f"data/instances/setcover/transfer_2000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
+        # gcnn_models += ['mean_convolution', 'no_prenorm']nd
 
     elif args.problem == 'cauctions':
         instances += [{'type': 'small', 'path': f"data/instances/cauctions/transfer_100_500/instance_{i+1}.lp"} for i in range(20)]
@@ -173,14 +173,14 @@ if __name__ == '__main__':
 
     branching_policies = []
 
-    # SCIP internal brancher baselines
-    for brancher in internal_branchers:
-        for seed in seeds:
-            branching_policies.append({
-                    'type': 'internal',
-                    'name': brancher,
-                    'seed': seed,
-             })
+    # # SCIP internal brancher baselines
+    # for brancher in internal_branchers:
+    #     for seed in seeds:
+    #         branching_policies.append({
+    #                 'type': 'internal',
+    #                 'name': brancher,
+    #                 'seed': seed,
+    #          })
     # ML baselines
     for model in other_models:
         for seed in seeds:

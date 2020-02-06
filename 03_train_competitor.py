@@ -27,6 +27,7 @@ def load_samples(filenames, feat_type, label_type, augment, qbnorm, size_limit, 
             log(f"  dataset size limit reached ({size_limit} candidate variables)", logfile)
             break
 
+    print(len(x[0]))
     x = np.concatenate(x)
     y = np.concatenate(y)
     ncands = np.asarray(ncands)

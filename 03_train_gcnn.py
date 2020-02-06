@@ -17,7 +17,6 @@ from utilities import log
 
 from utilities_tf import load_batch_gcnn
 
-
 def load_batch_tf(x):
     return tf.py_func(
         load_batch_gcnn,
@@ -63,9 +62,9 @@ def pretrain(model, dataloader):
 def process(model, dataloader, top_k, optimizer=None):
     mean_loss = 0
     mean_kacc = np.zeros(len(top_k))
-
     n_samples_processed = 0
     for batch in dataloader:
+        print("Processing")
         c, ei, ev, v, n_cs, n_vs, n_cands, cands, best_cands, cand_scores = batch
         batched_states = (c, ei, ev, v, tf.reduce_sum(n_cs, keepdims=True), tf.reduce_sum(n_vs, keepdims=True))  # prevent padding
         batch_size = len(n_cs.numpy())
@@ -100,6 +99,8 @@ def process(model, dataloader, top_k, optimizer=None):
         mean_kacc += kacc * batch_size
         n_samples_processed += batch_size
 
+    if n_samples_processed == 0:
+        n_samples_processed = 1
     mean_loss /= n_samples_processed
     mean_kacc /= n_samples_processed
 
@@ -243,22 +244,27 @@ if __name__ == '__main__':
     best_loss = np.inf
     for epoch in range(max_epochs + 1):
         log(f"EPOCH {epoch}...", logfile)
-        epoch_loss_avg = tfe.metrics.Mean()
-        epoch_accuracy = tfe.metrics.Accuracy()
+        # epoch_loss_avg = tf.compat.v1.metrics.mean()
+        # epoch_accuracy = tf.compat.v1.metrics.accuracy()
 
         # TRAIN
         if epoch == 0:
             n = pretrain(model=model, dataloader=pretrain_data)
             log(f"PRETRAINED {n} LAYERS", logfile)
             # model compilation
-            model.call = tfe.defun(model.call, input_signature=model.input_signature)
+            print(tf.__version__)
+            # tfe.enable_eager_execution()
+            # print(tf.contrib.eager.defun) 
+            model.call = tf.function(model.call, input_signature=model.input_signature)
         else:
             # bugfix: tensorflow's shuffle() seems broken...
             epoch_train_files = rng.choice(train_files, epoch_size * batch_size, replace=True)
+            print(epoch_train_files)
             train_data = tf.data.Dataset.from_tensor_slices(epoch_train_files)
             train_data = train_data.batch(batch_size)
             train_data = train_data.map(load_batch_tf)
             train_data = train_data.prefetch(1)
+            print(train_data)
             train_loss, train_kacc = process(model, train_data, top_k, optimizer)
             log(f"TRAIN LOSS: {train_loss:0.3f} " + "".join([f" acc@{k}: {acc:0.3f}" for k, acc in zip(top_k, train_kacc)]), logfile)
 

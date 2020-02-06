@@ -355,19 +355,19 @@ if __name__ == '__main__':
     print(f"{len(instances_test)} test instances for {test_size} samples")
 
     # create output directory, throws an error if it already exists
-    os.makedirs(out_dir)
+    # os.makedirs(out_dir)
 
     rng = np.random.RandomState(args.seed)
-    collect_samples(instances_train, out_dir + '/train', rng, train_size,
-                    args.njobs, exploration_policy=exploration_strategy,
-                    query_expert_prob=node_record_prob,
-                    time_limit=time_limit)
+    # collect_samples(instances_train, out_dir + '/train', rng, train_size,
+    #                 args.njobs, exploration_policy=exploration_strategy,
+    #                 query_expert_prob=node_record_prob,
+    #                 time_limit=time_limit)
 
     rng = np.random.RandomState(args.seed + 1)
-    collect_samples(instances_valid, out_dir + '/valid', rng, test_size,
-                    args.njobs, exploration_policy=exploration_strategy,
-                    query_expert_prob=node_record_prob,
-                    time_limit=time_limit)
+    # collect_samples(instances_valid, out_dir + '/valid', rng, test_size,
+    #                 args.njobs, exploration_policy=exploration_strategy,
+    #                 query_expert_prob=node_record_prob,
+    #                 time_limit=time_limit)
 
     rng = np.random.RandomState(args.seed + 2)
     collect_samples(instances_test, out_dir + '/test', rng, test_size,

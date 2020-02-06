@@ -326,14 +326,14 @@ class GCNPolicy(BaseModel):
         # save input signature for compilation
         self.input_signature = [
             (
-                tf.contrib.eager.TensorSpec(shape=[None, self.cons_nfeats], dtype=tf.float32),
-                tf.contrib.eager.TensorSpec(shape=[2, None], dtype=tf.int32),
-                tf.contrib.eager.TensorSpec(shape=[None, self.edge_nfeats], dtype=tf.float32),
-                tf.contrib.eager.TensorSpec(shape=[None, self.var_nfeats], dtype=tf.float32),
-                tf.contrib.eager.TensorSpec(shape=[None], dtype=tf.int32),
-                tf.contrib.eager.TensorSpec(shape=[None], dtype=tf.int32),
+                tf.TensorSpec(shape=[None, self.cons_nfeats], dtype=tf.float32),
+                tf.TensorSpec(shape=[2, None], dtype=tf.int32),
+                tf.TensorSpec(shape=[None, self.edge_nfeats], dtype=tf.float32),
+                tf.TensorSpec(shape=[None, self.var_nfeats], dtype=tf.float32),
+                tf.TensorSpec(shape=[None], dtype=tf.int32),
+                tf.TensorSpec(shape=[None], dtype=tf.int32),
             ),
-            tf.contrib.eager.TensorSpec(shape=[], dtype=tf.bool),
+            tf.TensorSpec(shape=[], dtype=tf.bool),
         ]
 
     def build(self, input_shapes):

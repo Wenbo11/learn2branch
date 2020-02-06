@@ -133,7 +133,7 @@ if __name__ == '__main__':
 
     os.makedirs("results", exist_ok=True)
     result_file = f"results/{args.problem}_validation_{time.strftime('%Y%m%d-%H%M%S')}.csv"
-    seeds = [0, 1, 2, 3, 4]
+    seeds = [0]
     gcnn_models = ['baseline']
     other_models = ['extratrees_gcnn_agg', 'lambdamart_khalil', 'svmrank_khalil']
     test_batch_size = 128
@@ -170,8 +170,7 @@ if __name__ == '__main__':
 
     print(f"{len(test_files)} test samples")
 
-    evaluated_policies = [['gcnn', model] for model in gcnn_models] + \
-            [['ml-competitor', model] for model in other_models]
+    evaluated_policies = [['ml-competitor', model] for model in other_models]
 
     fieldnames = [
         'policy',
@@ -200,7 +199,7 @@ if __name__ == '__main__':
                     del sys.path[0]
                     policy['model'] = model.GCNPolicy()
                     policy['model'].restore_state(f"trained_models/{args.problem}/{policy['name']}/{seed}/best_params.pkl")
-                    policy['model'].call = tfe.defun(policy['model'].call, input_signature=policy['model'].input_signature)
+                    policy['model'].call = tf.function(policy['model'].call, input_signature=policy['model'].input_signature)
                     policy['batch_datatypes'] = [tf.float32, tf.int32, tf.float32,
                             tf.float32, tf.int32, tf.int32, tf.int32, tf.int32, tf.int32, tf.float32]
                     policy['batch_fun'] = load_batch_gcnn
