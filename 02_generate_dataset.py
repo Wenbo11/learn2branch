@@ -43,7 +43,7 @@ class SamplingAgent(scip.Branchrule):
             cands, *_ = self.model.getPseudoBranchCands()
             state_khalil = utilities.extract_khalil_variable_features(self.model, cands, self.khalil_root_buffer)
 
-            result = self.model.executeBranchRule('vanillafullstrong', allowaddcons)
+            result = self.model.executeBranchRule('vanillafullstrong', allowaddcons, False)
             cands_, scores, npriocands, bestcand = self.model.getVanillafullstrongData()
 
             assert result == scip.SCIP_RESULT.DIDNOTRUN
