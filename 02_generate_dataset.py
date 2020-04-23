@@ -323,10 +323,10 @@ if __name__ == '__main__':
     time_limit = 3600
 
     if args.problem == 'setcover':
-        instances_train = glob.glob('data/instances/setcover/train_500r_1000c_0.05d/*.lp')
-        instances_valid = glob.glob('data/instances/setcover/valid_500r_1000c_0.05d/*.lp')
-        instances_test = glob.glob('data/instances/setcover/test_500r_1000c_0.05d/*.lp')
-        out_dir = 'data/samples/setcover/500r_1000c_0.05d'
+        instances_train = glob.glob('data/instances/setcover/train_100r_200c_0.1d_1mc_0se/*.lp')
+        instances_valid = glob.glob('data/instances/setcover/valid_100r_200c_0.1d_1mc_0se/*.lp')
+        instances_test = glob.glob('data/instances/setcover/test_100r_200c_0.1d_1mc_0se/*.lp')
+        out_dir = 'data/samples/setcover/100r_200c_0.1d_1mc_0se'
 
     elif args.problem == 'cauctions':
         instances_train = glob.glob('data/instances/cauctions/train_100_500/*.lp')
