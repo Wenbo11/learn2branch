@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     result_file = f"{args.problem}_{time.strftime('%Y%m%d-%H%M%S')}.csv"
     instances = []
-    seeds = [0, 1, 2, 3, 4]
+    seeds = [20, 40, 60, 80, 100]
     gcnn_models = ['baseline']
     # other_models = ['extratrees_gcnn_agg', 'lambdamart_khalil', 'svmrank_khalil']
     other_models = []
