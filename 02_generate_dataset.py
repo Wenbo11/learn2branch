@@ -43,8 +43,8 @@ class SamplingAgent(scip.Branchrule):
             cands, *_ = self.model.getPseudoBranchCands()
             state_khalil = utilities.extract_khalil_variable_features(self.model, cands, self.khalil_root_buffer)
 
-            result = self.model.executeBranchRule('vanillafullstrong', allowaddcons, False)
-            cands_, scores, npriocands, bestcand = self.model.getVanillafullstrongData()
+            result = self.model.executeBranchRule('vanillafullstrong', allowaddcons, domred=False)
+            cands_, scores, npriocands, bestcand, scip_result = self.model.getVanillafullstrongData()
 
             assert result == scip.SCIP_RESULT.DIDNOTRUN
             assert all([c1.getCol().getLPPos() == c2.getCol().getLPPos() for c1, c2 in zip(cands, cands_)])
@@ -87,7 +87,8 @@ class SamplingAgent(scip.Branchrule):
         # apply 'vanillafullstrong' branching decision if needed
         if query_expert and self.follow_expert or self.exploration_policy == 'vanillafullstrong':
             assert result == scip.SCIP_RESULT.DIDNOTRUN
-            cands, scores, npriocands, bestcand = self.model.getVanillafullstrongData()
+
+            cands, scores, npriocands, bestcand, scip_result = self.model.getVanillafullstrongData()
             self.model.branchVar(cands[bestcand])
             result = scip.SCIP_RESULT.BRANCHED
 
@@ -326,7 +327,10 @@ if __name__ == '__main__':
         instances_train = glob.glob('data/instances/setcover/train_100r_200c_0.05d_1mc_0se/*/*.lp')
         instances_valid = glob.glob('data/instances/setcover/valid_100r_200c_0.05d_1mc_0se/*/*.lp')
         instances_test = glob.glob('data/instances/setcover/test_100r_200c_0.05d_1mc_0se/*/*.lp')
-        out_dir = 'data/samples/setcover/100r_200c_0.1d_1mc_0se'
+        # instances_train = glob.glob('data/instances/setcover/train_100r_200c_0.05d/*.lp')
+        # instances_valid = glob.glob('data/instances/setcover/valid_500r_1000c_0.05d/*.lp')
+        # instances_test = glob.glob('data/instances/setcover/test_500r_1000c_0.05d/*.lp')
+        out_dir = 'data/samples/setcover/100r_200c_0.05d'
 
     elif args.problem == 'cauctions':
         instances_train = glob.glob('data/instances/cauctions/train_100_500/*.lp')
@@ -355,7 +359,7 @@ if __name__ == '__main__':
     print(f"{len(instances_test)} test instances for {test_size} samples")
 
     # create output directory, throws an error if it already exists
-    os.makedirs(out_dir)
+    os.makedirs(out_dir, exist_ok=True)
 
     rng = np.random.RandomState(args.seed)
     collect_samples(instances_train, out_dir + '/train', rng, train_size,
