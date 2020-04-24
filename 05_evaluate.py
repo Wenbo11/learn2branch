@@ -143,15 +143,19 @@ if __name__ == '__main__':
     instances = []
     seeds = [0, 1, 2, 3, 4]
     gcnn_models = ['baseline']
-    other_models = ['extratrees_gcnn_agg', 'lambdamart_khalil', 'svmrank_khalil']
+    # other_models = ['extratrees_gcnn_agg', 'lambdamart_khalil', 'svmrank_khalil']
+    other_models = []
     internal_branchers = ['relpscost']
     time_limit = 3600
 
     if args.problem == 'setcover':
-        instances += [{'type': 'small', 'path': f"data/instances/setcover/transfer_500r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
-        instances += [{'type': 'medium', 'path': f"data/instances/setcover/transfer_1000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
-        instances += [{'type': 'big', 'path': f"data/instances/setcover/transfer_2000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
-        gcnn_models += ['mean_convolution', 'no_prenorm']
+        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.05d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.1d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.15d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        # instances += [{'type': 'small', 'path': f"data/instances/setcover/transfer_500r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
+        # instances += [{'type': 'medium', 'path': f"data/instances/setcover/transfer_1000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
+        # instances += [{'type': 'big', 'path': f"data/instances/setcover/transfer_2000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
+        # gcnn_models += ['mean_convolution', 'no_prenorm']
 
     elif args.problem == 'cauctions':
         instances += [{'type': 'small', 'path': f"data/instances/cauctions/transfer_100_500/instance_{i+1}.lp"} for i in range(20)]
