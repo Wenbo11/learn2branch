@@ -123,7 +123,7 @@ if __name__ == '__main__':
         '-s', '--seed',
         help='Random generator seed.',
         type=utilities.valid_seed,
-        default=0,
+        default=20,
     )
     parser.add_argument(
         '-g', '--gpu',
@@ -154,7 +154,7 @@ if __name__ == '__main__':
     }
     problem_folder = problem_folders[args.problem]
 
-    running_dir = f"trained_models/{args.problem}/{args.model}/{args.seed}"
+    running_dir = f"trained_models/{problem_folders[args.problem]}/{args.model}/{args.seed}"
 
     os.makedirs(running_dir)
 
