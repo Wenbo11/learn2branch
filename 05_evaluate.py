@@ -47,10 +47,15 @@ class PolicyBranching(scip.Branchrule):
     def branchinitsol(self):
         self.ndomchgs = 0
         self.ncutoffs = 0
+        self.gap = []
         self.state_buffer = {}
         self.khalil_root_buffer = {}
 
     def branchexeclp(self, allowaddcons):
+  
+        if self.model.getNNodes()%50 == 0:
+            gap = self.model.getGap()
+            self.gap.append(gap)
 
         # SCIP internal branching rule
         if self.policy_type == 'internal':
@@ -114,7 +119,7 @@ class PolicyBranching(scip.Branchrule):
 
             self.model.branchVar(best_var)
             result = scip.SCIP_RESULT.BRANCHED
-
+            
         # fair node counting
         if result == scip.SCIP_RESULT.REDUCEDDOM:
             self.ndomchgs += 1
@@ -142,6 +147,7 @@ if __name__ == '__main__':
     result_file = f"{args.problem}_{time.strftime('%Y%m%d-%H%M%S')}.csv"
     instances = []
     seeds = [20, 40, 60, 80, 100]
+    #seeds = [40]
     gcnn_models = ['baseline']
     # other_models = ['extratrees_gcnn_agg', 'lambdamart_khalil', 'svmrank_khalil']
     other_models = []
@@ -149,9 +155,11 @@ if __name__ == '__main__':
     time_limit = 3600
 
     if args.problem == 'setcover':
-        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.05d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.1d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.15d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_100r_200c_0.1d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_100r_200c_0.2d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_150r_300c_0.1d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_500r_1000c_0.05d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_1000r_1000c_0.05d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
         # instances += [{'type': 'small', 'path': f"data/instances/setcover/transfer_500r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
         # instances += [{'type': 'medium', 'path': f"data/instances/setcover/transfer_1000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
         # instances += [{'type': 'big', 'path': f"data/instances/setcover/transfer_2000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
@@ -163,9 +171,9 @@ if __name__ == '__main__':
         instances += [{'type': 'big', 'path': f"data/instances/cauctions/transfer_300_1500/instance_{i+1}.lp"} for i in range(20)]
 
     elif args.problem == 'facilities':
-        instances += [{'type': 'small', 'path': f"data/instances/facilities/transfer_100_100_5/instance_{i+1}.lp"} for i in range(20)]
-        instances += [{'type': 'medium', 'path': f"data/instances/facilities/transfer_200_100_5/instance_{i+1}.lp"} for i in range(20)]
-        instances += [{'type': 'big', 'path': f"data/instances/facilities/transfer_400_100_5/instance_{i+1}.lp"} for i in range(20)]
+        instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_100_100_5/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_400_100_5/instance_{i+1}.lp"} for i in range(100)]
 
     elif args.problem == 'indset':
         instances += [{'type': 'small', 'path': f"data/instances/indset/transfer_500_4/instance_{i+1}.lp"} for i in range(20)]
@@ -201,7 +209,7 @@ if __name__ == '__main__':
                 'type': 'gcnn',
                 'name': model,
                 'seed': seed,
-                'parameters': f'trained_models/{args.problem}/{model}/{seed}/best_params.pkl'
+                'parameters': f'trained_models/{args.problem}/100_100_5/{model}/{seed}/best_params.pkl'
             })
 
     print(f"problem: {args.problem}")
@@ -258,7 +266,11 @@ if __name__ == '__main__':
         'nnodes',
         'nlps',
         'stime',
-        'gap',
+        'finalgap',
+        '50_gap',
+        '100_gap',
+        '150_gap',
+        '200_gap',
         'status',
         'ndomchgs',
         'ncutoffs',
@@ -292,6 +304,7 @@ if __name__ == '__main__':
 
                 walltime = time.perf_counter()
                 proctime = time.process_time()
+                # model.setLongintParam('limits/totalnodes', args.limit_nodes)
 
                 m.optimize()
 
@@ -301,10 +314,14 @@ if __name__ == '__main__':
                 stime = m.getSolvingTime()
                 nnodes = m.getNNodes()
                 nlps = m.getNLPs()
-                gap = m.getGap()
+                final_gap = m.getGap()
                 status = m.getStatus()
                 ndomchgs = brancher.ndomchgs
                 ncutoffs = brancher.ncutoffs
+                gap = brancher.gap
+                
+                while len(gap) <= 4:
+                    gap.append('NAN')
 
                 writer.writerow({
                     'policy': f"{policy['type']}:{policy['name']}",
@@ -314,7 +331,11 @@ if __name__ == '__main__':
                     'nnodes': nnodes,
                     'nlps': nlps,
                     'stime': stime,
-                    'gap': gap,
+                    'finalgap': final_gap,
+                    '50_gap': gap[0],
+                    '100_gap': gap[1],
+                    '150_gap': gap[2],
+                    '200_gap': gap[3],
                     'status': status,
                     'ndomchgs': ndomchgs,
                     'ncutoffs': ncutoffs,
@@ -325,5 +346,5 @@ if __name__ == '__main__':
                 csvfile.flush()
                 m.freeProb()
 
-                print(f"  {policy['type']}:{policy['name']} {policy['seed']} - {nnodes} ({nnodes+2*(ndomchgs+ncutoffs)}) nodes {nlps} lps {stime:.2f} ({walltime:.2f} wall {proctime:.2f} proc) s. {status}")
+                print(f"  {policy['type']}:{policy['name']} {policy['seed']} - {nnodes} ({nnodes+2*(ndomchgs+ncutoffs)}) nodes {nlps} lps {stime:.2f} ({walltime:.2f} wall {proctime:.2f} proc) s. {status} gap {gap[:4]}")
 
