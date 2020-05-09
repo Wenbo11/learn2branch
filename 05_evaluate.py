@@ -45,17 +45,24 @@ class PolicyBranching(scip.Branchrule):
             raise NotImplementedError
 
     def branchinitsol(self):
+
         self.ndomchgs = 0
         self.ncutoffs = 0
-        self.gap = []
+        self.gap_50 = 0
+        self.gap_100 = 0
+        self.gap_200 = 0
         self.state_buffer = {}
         self.khalil_root_buffer = {}
 
     def branchexeclp(self, allowaddcons):
   
-        if self.model.getNNodes()%50 == 0:
-            gap = self.model.getGap()
-            self.gap.append(gap)
+        num_node = self.model.getNNodes()
+        if num_node >= 50 and self.gap_50 == 0:
+            self.gap_50 = self.model.getGap()
+        elif num_node >= 100 and self.gap_100 == 0:
+            self.gap_100 = self.model.getGap()
+        elif num_node >= 200 and self.gap_200 == 0:
+            self.gap_200 = self.model.getGap()
 
         # SCIP internal branching rule
         if self.policy_type == 'internal':
@@ -171,9 +178,12 @@ if __name__ == '__main__':
         instances += [{'type': 'big', 'path': f"data/instances/cauctions/transfer_300_1500/instance_{i+1}.lp"} for i in range(20)]
 
     elif args.problem == 'facilities':
-        instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_100_100_5/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_400_100_5/instance_{i+1}.lp"} for i in range(100)]
+        # instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_100_100_5/instance_{i+1}.lp"} for i in range(100)]
+        # instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(100)]
+        # instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_400_100_5/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"data/instances/facilities/train_100_100_5/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"data/instances/facilities/test_400_100_5/instance_{i+1}.lp"} for i in range(100)]
 
     elif args.problem == 'indset':
         instances += [{'type': 'small', 'path': f"data/instances/indset/transfer_500_4/instance_{i+1}.lp"} for i in range(20)]
@@ -269,7 +279,6 @@ if __name__ == '__main__':
         'finalgap',
         '50_gap',
         '100_gap',
-        '150_gap',
         '200_gap',
         'status',
         'ndomchgs',
@@ -318,10 +327,6 @@ if __name__ == '__main__':
                 status = m.getStatus()
                 ndomchgs = brancher.ndomchgs
                 ncutoffs = brancher.ncutoffs
-                gap = brancher.gap
-                
-                while len(gap) <= 4:
-                    gap.append('NAN')
 
                 writer.writerow({
                     'policy': f"{policy['type']}:{policy['name']}",
@@ -332,10 +337,9 @@ if __name__ == '__main__':
                     'nlps': nlps,
                     'stime': stime,
                     'finalgap': final_gap,
-                    '50_gap': gap[0],
-                    '100_gap': gap[1],
-                    '150_gap': gap[2],
-                    '200_gap': gap[3],
+                    '50_gap': brancher.gap_50,
+                    '100_gap': brancher.gap_100,
+                    '200_gap': brancher.gap_200,
                     'status': status,
                     'ndomchgs': ndomchgs,
                     'ncutoffs': ncutoffs,
@@ -346,5 +350,5 @@ if __name__ == '__main__':
                 csvfile.flush()
                 m.freeProb()
 
-                print(f"  {policy['type']}:{policy['name']} {policy['seed']} - {nnodes} ({nnodes+2*(ndomchgs+ncutoffs)}) nodes {nlps} lps {stime:.2f} ({walltime:.2f} wall {proctime:.2f} proc) s. {status} gap {gap[:4]}")
+                print(f"  {policy['type']}:{policy['name']} {policy['seed']} - {nnodes} ({nnodes+2*(ndomchgs+ncutoffs)}) nodes {nlps} lps {stime:.2f} ({walltime:.2f} wall {proctime:.2f} proc) s. {status} gap_50 {brancher.gap_50} gap_100 {brancher.gap_100} gap_200 {brancher.gap_200}")
 
