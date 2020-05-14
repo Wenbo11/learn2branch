@@ -49,6 +49,7 @@ class PolicyBranching(scip.Branchrule):
         self.ndomchgs = 0
         self.ncutoffs = 0
         self.gap_50 = 0
+        self.gap_75 = 0
         self.gap_100 = 0
         self.gap_200 = 0
         self.state_buffer = {}
@@ -59,6 +60,8 @@ class PolicyBranching(scip.Branchrule):
         num_node = self.model.getNNodes()
         if num_node >= 50 and self.gap_50 == 0:
             self.gap_50 = self.model.getGap()
+        elif num_node >= 75 and self.gap_75 == 0:
+            self.gap_75 = self.model.getGap()
         elif num_node >= 100 and self.gap_100 == 0:
             self.gap_100 = self.model.getGap()
         elif num_node >= 200 and self.gap_200 == 0:
@@ -278,6 +281,7 @@ if __name__ == '__main__':
         'stime',
         'finalgap',
         '50_gap',
+        '75_gap',
         '100_gap',
         '200_gap',
         'status',
@@ -338,6 +342,7 @@ if __name__ == '__main__':
                     'stime': stime,
                     'finalgap': final_gap,
                     '50_gap': brancher.gap_50,
+                    '75_gap': brancher.gap_75,
                     '100_gap': brancher.gap_100,
                     '200_gap': brancher.gap_200,
                     'status': status,
@@ -350,5 +355,5 @@ if __name__ == '__main__':
                 csvfile.flush()
                 m.freeProb()
 
-                print(f"  {policy['type']}:{policy['name']} {policy['seed']} - {nnodes} ({nnodes+2*(ndomchgs+ncutoffs)}) nodes {nlps} lps {stime:.2f} ({walltime:.2f} wall {proctime:.2f} proc) s. {status} gap_50 {brancher.gap_50} gap_100 {brancher.gap_100} gap_200 {brancher.gap_200}")
+                print(f"  {policy['type']}:{policy['name']} {policy['seed']} - {nnodes} ({nnodes+2*(ndomchgs+ncutoffs)}) nodes {nlps} lps {stime:.2f} ({walltime:.2f} wall {proctime:.2f} proc) s. {status} gap_50 {brancher.gap_50} gap_75 {brancher.gap_75} gap_100 {brancher.gap_100} gap_200 {brancher.gap_200}")
 
