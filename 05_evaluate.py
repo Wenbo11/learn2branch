@@ -51,7 +51,10 @@ class PolicyBranching(scip.Branchrule):
         self.gap_50 = 0
         self.gap_75 = 0
         self.gap_100 = 0
+        self.gap_150 = 0
         self.gap_200 = 0
+        self.gap_250 = 0
+        self.gap_300 = 0
         self.state_buffer = {}
         self.khalil_root_buffer = {}
 
@@ -64,9 +67,14 @@ class PolicyBranching(scip.Branchrule):
             self.gap_75 = self.model.getGap()
         elif num_node >= 100 and self.gap_100 == 0:
             self.gap_100 = self.model.getGap()
+        elif num_node >= 150 and self.gap_150 == 0:
+            self.gap_150 = self.model.getGap()
         elif num_node >= 200 and self.gap_200 == 0:
             self.gap_200 = self.model.getGap()
-
+        elif num_node >= 250 and self.gap_250 == 0:
+            self.gap_250 = self.model.getGap()
+        elif num_node >= 300 and self.gap_300 == 0:
+            self.gap_300 = self.model.getGap()
         # SCIP internal branching rule
         if self.policy_type == 'internal':
             result = self.model.executeBranchRule(self.policy, allowaddcons)
@@ -152,24 +160,40 @@ if __name__ == '__main__':
         type=int,
         default=0,
     )
+    parser.add_argument(
+        '--limit_time',
+        help='limit time',
+        type=float,
+        default=3600,
+    )
+    parser.add_argument(
+        '--limit_node',
+        help='limit node',
+        type=int,
+        default=-1,
+    )
     args = parser.parse_args()
 
-    result_file = f"{args.problem}_{time.strftime('%Y%m%d-%H%M%S')}.csv"
+    result_file = f"{args.problem}_{time.strftime('%Y%m%d-%H%M%S')}_time{args.limit_time}_nodes{args.limit_node}.csv"
     instances = []
-    seeds = [20, 40, 60, 80, 100]
+    seeds = [4, 6, 8, 10, 12]
     #seeds = [40]
     gcnn_models = ['baseline']
-    # other_models = ['extratrees_gcnn_agg', 'lambdamart_khalil', 'svmrank_khalil']
-    other_models = []
-    internal_branchers = ['relpscost']
-    time_limit = 3600
+    #gcnn_models = []
+    #other_models = ['extratrees_gcnn_agg', 'lambdamart_khalil', 'svmrank_khalil']
+    other_models = ['svmrank_khalil']
+    #other_models = []
+    #internal_branchers = ['relpscost']
+    internal_branchers = []
+    #time_limit = 3600
+    time_limit = args.limit_time
+    node_limit = args.limit_node
 
     if args.problem == 'setcover':
         #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_100r_200c_0.1d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
         #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_100r_200c_0.2d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
         #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_150r_300c_0.1d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_500r_1000c_0.05d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_1000r_1000c_0.05d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.05d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
         # instances += [{'type': 'small', 'path': f"data/instances/setcover/transfer_500r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
         # instances += [{'type': 'medium', 'path': f"data/instances/setcover/transfer_1000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
         # instances += [{'type': 'big', 'path': f"data/instances/setcover/transfer_2000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
@@ -184,9 +208,9 @@ if __name__ == '__main__':
         # instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_100_100_5/instance_{i+1}.lp"} for i in range(100)]
         # instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(100)]
         # instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_400_100_5/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"data/instances/facilities/train_100_100_5/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"data/instances/facilities/test_400_100_5/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_100_100_5/instance_{i+1}.lp"} for i in range(20)]
+        #instances += [{'type': 'small', 'path': f"data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(100)]
+        #instances += [{'type': 'small', 'path': f"data/instances/facilities/test_400_100_5/instance_{i+1}.lp"} for i in range(100)]
 
     elif args.problem == 'indset':
         instances += [{'type': 'small', 'path': f"data/instances/indset/transfer_500_4/instance_{i+1}.lp"} for i in range(20)]
@@ -213,7 +237,7 @@ if __name__ == '__main__':
                 'type': 'ml-competitor',
                 'name': model,
                 'seed': seed,
-                'model': f'trained_models/{args.problem}/{model}/{seed}',
+                'model': f'trained_models/{args.problem}/100_100_5/{model}/{seed}',
             })
     # GCNN models
     for model in gcnn_models:
@@ -222,7 +246,7 @@ if __name__ == '__main__':
                 'type': 'gcnn',
                 'name': model,
                 'seed': seed,
-                'parameters': f'trained_models/{args.problem}/100_100_5/{model}/{seed}/best_params.pkl'
+                'parameters': f'trained_models/{args.problem}/100_100_5/{model}/{seed*10-20}/best_params.pkl'
             })
 
     print(f"problem: {args.problem}")
@@ -256,6 +280,7 @@ if __name__ == '__main__':
         if policy['type'] == 'ml-competitor':
             try:
                 with open(f"{policy['model']}/normalization.pkl", 'rb') as f:
+                    print(f"loaded model from {policy['model']}")
                     policy['feat_shift'], policy['feat_scale'] = pickle.load(f)
             except:
                 policy['feat_shift'], policy['feat_scale'] = 0, 1
@@ -283,7 +308,10 @@ if __name__ == '__main__':
         '50_gap',
         '75_gap',
         '100_gap',
+        '150_gap',
         '200_gap',
+        '250_gap',
+        '300_gap',
         'status',
         'ndomchgs',
         'ncutoffs',
@@ -305,8 +333,9 @@ if __name__ == '__main__':
                 m.setIntParam('display/verblevel', 0)
                 m.readProblem(f"{instance['path']}")
                 utilities.init_scip_params(m, seed=policy['seed'])
-                m.setIntParam('timing/clocktype', 1)  # 1: CPU user seconds, 2: wall clock time
+                m.setIntParam('timing/clocktype', 2)  # 1: CPU user seconds, 2: wall clock time
                 m.setRealParam('limits/time', time_limit)
+                m.setLongintParam('limits/totalnodes', node_limit)
 
                 brancher = PolicyBranching(policy)
                 m.includeBranchrule(
@@ -344,7 +373,10 @@ if __name__ == '__main__':
                     '50_gap': brancher.gap_50,
                     '75_gap': brancher.gap_75,
                     '100_gap': brancher.gap_100,
+                    '150_gap': brancher.gap_150,
                     '200_gap': brancher.gap_200,
+                    '250_gap':brancher.gap_250,
+                    '300_gap':brancher.gap_300,
                     'status': status,
                     'ndomchgs': ndomchgs,
                     'ncutoffs': ncutoffs,
