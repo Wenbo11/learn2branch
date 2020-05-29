@@ -57,24 +57,29 @@ class PolicyBranching(scip.Branchrule):
         self.gap_300 = 0
         self.state_buffer = {}
         self.khalil_root_buffer = {}
+        self.time_gap = [[],[]]
 
     def branchexeclp(self, allowaddcons):
   
+        #print(f'time {self.model.getSolvingTime()}')
+        gap = self.model.getGap()
+        self.time_gap[0].append(self.model.getSolvingTime())
+        self.time_gap[1].append(gap)
         num_node = self.model.getNNodes()
         if num_node >= 50 and self.gap_50 == 0:
-            self.gap_50 = self.model.getGap()
+            self.gap_50 = gap
         elif num_node >= 75 and self.gap_75 == 0:
-            self.gap_75 = self.model.getGap()
+            self.gap_75 = gap
         elif num_node >= 100 and self.gap_100 == 0:
-            self.gap_100 = self.model.getGap()
+            self.gap_100 = gap
         elif num_node >= 150 and self.gap_150 == 0:
-            self.gap_150 = self.model.getGap()
+            self.gap_150 = gap
         elif num_node >= 200 and self.gap_200 == 0:
-            self.gap_200 = self.model.getGap()
+            self.gap_200 = gap
         elif num_node >= 250 and self.gap_250 == 0:
-            self.gap_250 = self.model.getGap()
+            self.gap_250 = gap
         elif num_node >= 300 and self.gap_300 == 0:
-            self.gap_300 = self.model.getGap()
+            self.gap_300 = gap
         # SCIP internal branching rule
         if self.policy_type == 'internal':
             result = self.model.executeBranchRule(self.policy, allowaddcons)
@@ -176,7 +181,8 @@ if __name__ == '__main__':
 
     result_file = f"{args.problem}_{time.strftime('%Y%m%d-%H%M%S')}_time{args.limit_time}_nodes{args.limit_node}.csv"
     instances = []
-    seeds = [4, 6, 8, 10, 12]
+    #seeds = [4, 6, 8, 10, 12]
+    seeds =  [0 ,1, 2, 3, 4]
     #seeds = [40]
     gcnn_models = ['baseline']
     #gcnn_models = []
@@ -222,6 +228,11 @@ if __name__ == '__main__':
 
     branching_policies = []
 
+    if args.problem == 'setcover':
+        pdir = '100r_200c_0.05d'
+    elif args.problem == 'facilities':
+        pdir = '100_100_5'
+
     # SCIP internal brancher baselines
     for brancher in internal_branchers:
         for seed in seeds:
@@ -237,7 +248,7 @@ if __name__ == '__main__':
                 'type': 'ml-competitor',
                 'name': model,
                 'seed': seed,
-                'model': f'trained_models/{args.problem}/100_100_5/{model}/{seed}',
+                'model': f'trained_models/{args.problem}/{pdir}/{model}/{seed*2 + 4}',
             })
     # GCNN models
     for model in gcnn_models:
@@ -246,7 +257,8 @@ if __name__ == '__main__':
                 'type': 'gcnn',
                 'name': model,
                 'seed': seed,
-                'parameters': f'trained_models/{args.problem}/100_100_5/{model}/{seed*10-20}/best_params.pkl'
+                #'parameters': f'trained_models/{args.problem}/{pdir}/{model}/{seed*10-20}/best_params.pkl'
+                'parameters': f'trained_models/{args.problem}/{pdir}/{model}/{seed*20+20}/best_params.pkl'
             })
 
     print(f"problem: {args.problem}")
@@ -295,6 +307,8 @@ if __name__ == '__main__':
                     policy['model'] = pickle.load(f)
 
     print("running SCIP...")
+    
+    time_gap_track = []
 
     fieldnames = [
         'policy',
@@ -353,6 +367,8 @@ if __name__ == '__main__':
                 walltime = time.perf_counter() - walltime
                 proctime = time.process_time() - proctime
 
+                time_gap_track.append(brancher.time_gap)
+
                 stime = m.getSolvingTime()
                 nnodes = m.getNNodes()
                 nlps = m.getNLPs()
@@ -385,6 +401,8 @@ if __name__ == '__main__':
                 })
 
                 csvfile.flush()
+                with open('./results/setcover/time_gap_setcover.pkl', 'wb') as f:
+                    pickle.dump(time_gap_track, f)
                 m.freeProb()
 
                 print(f"  {policy['type']}:{policy['name']} {policy['seed']} - {nnodes} ({nnodes+2*(ndomchgs+ncutoffs)}) nodes {nlps} lps {stime:.2f} ({walltime:.2f} wall {proctime:.2f} proc) s. {status} gap_50 {brancher.gap_50} gap_75 {brancher.gap_75} gap_100 {brancher.gap_100} gap_200 {brancher.gap_200}")
