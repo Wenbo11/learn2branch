@@ -13,7 +13,40 @@ def log(str, logfile=None):
             print(str, file=f)
 
 
-def init_scip_params(model, seed, heuristics=True, presolving=True, separating=True, conflict=True):
+# def init_scip_params(model, seed, heuristics=True, presolving=True, separating=True, conflict=True):
+#
+#     seed = seed % 2147483648  # SCIP seed range
+#
+#     # set up randomization
+#     model.setBoolParam('randomization/permutevars', True)
+#     model.setIntParam('randomization/permutationseed', seed)
+#     model.setIntParam('randomization/randomseedshift', seed)
+#
+#     # separation only at root node
+#     model.setIntParam('separating/maxrounds', 0)
+#
+#     # no restart
+#     model.setIntParam('presolving/maxrestarts', 0)
+#
+#     # if asked, disable presolving
+#     if not presolving:
+#         model.setIntParam('presolving/maxrounds', 0)
+#         model.setIntParam('presolving/maxrestarts', 0)
+#
+#     # if asked, disable separating (cuts)
+#     if not separating:
+#         model.setIntParam('separating/maxroundsroot', 0)
+#
+#     # if asked, disable conflict analysis (more cuts)
+#     if not conflict:
+#         model.setBoolParam('conflict/enable', False)
+#
+#     # if asked, disable primal heuristics
+#     if not heuristics:
+#         model.setHeuristics(scip.SCIP_PARAMSETTING.OFF)
+
+def init_scip_params(model, seed, heuristics=True, presolving=True,
+                     separating_root=True, conflict=True, propagation=True, separating=False):
 
     seed = seed % 2147483648  # SCIP seed range
 
@@ -22,20 +55,23 @@ def init_scip_params(model, seed, heuristics=True, presolving=True, separating=T
     model.setIntParam('randomization/permutationseed', seed)
     model.setIntParam('randomization/randomseedshift', seed)
 
-    # separation only at root node
-    model.setIntParam('separating/maxrounds', 0)
-
     # no restart
     model.setIntParam('presolving/maxrestarts', 0)
+
+    # disable separation except the root
+    if not separating:
+        model.setIntParam('separating/maxrounds', 0)
+
+    # if asked, disable separating (cuts)
+    if not separating_root:
+        model.setIntParam('separating/maxroundsroot', 0)
+        # model.setSeparating(SCIP_PARAMSETTING.OFF)
 
     # if asked, disable presolving
     if not presolving:
         model.setIntParam('presolving/maxrounds', 0)
         model.setIntParam('presolving/maxrestarts', 0)
-
-    # if asked, disable separating (cuts)
-    if not separating:
-        model.setIntParam('separating/maxroundsroot', 0)
+        # model.setPresolve(SCIP_PARAMSETTING.OFF)
 
     # if asked, disable conflict analysis (more cuts)
     if not conflict:
@@ -43,8 +79,7 @@ def init_scip_params(model, seed, heuristics=True, presolving=True, separating=T
 
     # if asked, disable primal heuristics
     if not heuristics:
-        model.setHeuristics(scip.SCIP_PARAMSETTING.OFF)
-
+        model.setHeuristics(SCIP_PARAMSETTING.OFF)
 
 def extract_state(model, buffer=None):
     """

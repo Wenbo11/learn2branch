@@ -95,7 +95,7 @@ class SamplingAgent(scip.Branchrule):
         return {"result": result}
 
 
-def make_samples(in_queue, out_queue):
+def make_samples(in_queue, out_queue, args):
     """
     Worker loop: fetch an instance, run an episode and record samples.
 
@@ -114,7 +114,10 @@ def make_samples(in_queue, out_queue):
         m = scip.Model()
         m.setIntParam('display/verblevel', 0)
         m.readProblem(f'{instance}')
-        utilities.init_scip_params(m, seed=seed)
+        if args.problem == 'cddesign':
+            utilities.init_scip_params(m, seed, True, True, True, True, True, True)
+        else:
+            utilities.init_scip_params(m, seed, True, True, True, True, True, False)
         m.setIntParam('timing/clocktype', 2)
         m.setRealParam('limits/time', time_limit)
 
@@ -138,6 +141,7 @@ def make_samples(in_queue, out_queue):
         m.setBoolParam('branching/vanillafullstrong/donotbranch', True)
         m.setBoolParam('branching/vanillafullstrong/idempotent', True)
 
+
         out_queue.put({
             'type': 'start',
             'episode': episode,
@@ -145,6 +149,7 @@ def make_samples(in_queue, out_queue):
             'seed': seed,
         })
 
+        m.setRealParam('limits/time', 600)
         m.optimize()
         m.freeProb()
 
@@ -191,7 +196,7 @@ def send_orders(orders_queue, instances, seed, exploration_policy, query_expert_
 
 
 def collect_samples(instances, out_dir, rng, n_samples, n_jobs,
-                    exploration_policy, query_expert_prob, time_limit):
+                    exploration_policy, query_expert_prob, time_limit, args):
     """
     Runs branch-and-bound episodes on the given set of instances, and collects
     randomly (state, action) pairs from the 'vanilla-fullstrong' expert
@@ -226,7 +231,7 @@ def collect_samples(instances, out_dir, rng, n_samples, n_jobs,
     for i in range(n_jobs):
         p = mp.Process(
                 target=make_samples,
-                args=(orders_queue, answers_queue),
+                args=(orders_queue, answers_queue, args),
                 daemon=True)
         workers.append(p)
         p.start()
@@ -298,7 +303,7 @@ if __name__ == '__main__':
     parser.add_argument(
         'problem',
         help='MILP instance type to process.',
-        choices=['setcover', 'cauctions', 'facilities', 'indset'],
+        choices=['setcover', 'cauctions', 'facilities', 'indset', 'cddesign'],
     )
     parser.add_argument(
         '-s', '--seed',
@@ -351,6 +356,11 @@ if __name__ == '__main__':
         out_dir = 'data/samples/facilities/100_100_5'
         time_limit = 600
 
+    elif args.problem == 'cddesign':
+        instances_train = glob.glob('data/instances/cddesign/train/*.lp')
+        instances_valid = glob.glob('data/instances/cddesign/valid/*.lp')
+        instances_test = glob.glob('data/instances/cddesign/test/*.lp')
+        out_dir = 'data/samples/cddesign/1'
     else:
         raise NotImplementedError
 
@@ -365,16 +375,16 @@ if __name__ == '__main__':
     collect_samples(instances_train, out_dir + '/train', rng, train_size,
                     args.njobs, exploration_policy=exploration_strategy,
                     query_expert_prob=node_record_prob,
-                    time_limit=time_limit)
+                    time_limit=time_limit, args=args)
 
     rng = np.random.RandomState(args.seed + 1)
     collect_samples(instances_valid, out_dir + '/valid', rng, test_size,
                     args.njobs, exploration_policy=exploration_strategy,
                     query_expert_prob=node_record_prob,
-                    time_limit=time_limit)
+                    time_limit=time_limit, args=args)
 
     rng = np.random.RandomState(args.seed + 2)
     collect_samples(instances_test, out_dir + '/test', rng, test_size,
                     args.njobs, exploration_policy=exploration_strategy,
                     query_expert_prob=node_record_prob,
-                    time_limit=time_limit)
+                    time_limit=time_limit, args=args)
