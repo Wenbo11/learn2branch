@@ -58,6 +58,7 @@ class PolicyBranching(scip.Branchrule):
         self.state_buffer = {}
         self.khalil_root_buffer = {}
         self.time_gap = [[],[]]
+        self.node_gap = [[],[]]
 
     def branchexeclp(self, allowaddcons):
   
@@ -66,6 +67,8 @@ class PolicyBranching(scip.Branchrule):
         self.time_gap[0].append(self.model.getSolvingTime())
         self.time_gap[1].append(gap)
         num_node = self.model.getNNodes()
+        self.node_gap[0].append(num_node)
+        self.node_gap[1].append(gap)
         if num_node >= 50 and self.gap_50 == 0:
             self.gap_50 = gap
         elif num_node >= 75 and self.gap_75 == 0:
@@ -182,7 +185,7 @@ if __name__ == '__main__':
     result_file = f"{args.problem}_{time.strftime('%Y%m%d-%H%M%S')}_time{args.limit_time}_nodes{args.limit_node}.csv"
     instances = []
     #seeds = [4, 6, 8, 10, 12]
-    seeds =  [0 ,1, 2, 3, 4]
+    seeds =  [2 ,4, 6, 8, 10]
     #seeds = [40]
     gcnn_models = ['baseline']
     #gcnn_models = []
@@ -199,7 +202,7 @@ if __name__ == '__main__':
         #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_100r_200c_0.1d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
         #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_100r_200c_0.2d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
         #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_150r_300c_0.1d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.05d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
+        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.1d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(20)]
         # instances += [{'type': 'small', 'path': f"data/instances/setcover/transfer_500r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
         # instances += [{'type': 'medium', 'path': f"data/instances/setcover/transfer_1000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
         # instances += [{'type': 'big', 'path': f"data/instances/setcover/transfer_2000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
@@ -214,7 +217,7 @@ if __name__ == '__main__':
         # instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_100_100_5/instance_{i+1}.lp"} for i in range(100)]
         # instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(100)]
         # instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_400_100_5/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_100_100_5/instance_{i+1}.lp"} for i in range(20)]
+        instances += [{'type': 'small', 'path': f"../data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(20)]
         #instances += [{'type': 'small', 'path': f"data/instances/facilities/test_200_100_5/instance_{i+1}.lp"} for i in range(100)]
         #instances += [{'type': 'small', 'path': f"data/instances/facilities/test_400_100_5/instance_{i+1}.lp"} for i in range(100)]
 
@@ -248,7 +251,7 @@ if __name__ == '__main__':
                 'type': 'ml-competitor',
                 'name': model,
                 'seed': seed,
-                'model': f'trained_models/{args.problem}/{pdir}/{model}/{seed*2 + 4}',
+                'model': f'trained_models/{args.problem}/{pdir}/{model}/{seed+2}',
             })
     # GCNN models
     for model in gcnn_models:
@@ -257,8 +260,8 @@ if __name__ == '__main__':
                 'type': 'gcnn',
                 'name': model,
                 'seed': seed,
-                #'parameters': f'trained_models/{args.problem}/{pdir}/{model}/{seed*10-20}/best_params.pkl'
-                'parameters': f'trained_models/{args.problem}/{pdir}/{model}/{seed*20+20}/best_params.pkl'
+                'parameters': f'trained_models/{args.problem}/{pdir}/{model}/{seed*10}/best_params.pkl'
+               # 'parameters': f'trained_models/{args.problem}/{pdir}/{model}/{seed*20+20}/best_params.pkl'
             })
 
     print(f"problem: {args.problem}")
@@ -309,7 +312,7 @@ if __name__ == '__main__':
     print("running SCIP...")
     
     time_gap_track = []
-
+    node_gap_track = []
     fieldnames = [
         'policy',
         'seed',
@@ -368,6 +371,7 @@ if __name__ == '__main__':
                 proctime = time.process_time() - proctime
 
                 time_gap_track.append(brancher.time_gap)
+                node_gap_track.append(brancher.node_gap)
 
                 stime = m.getSolvingTime()
                 nnodes = m.getNNodes()
@@ -401,8 +405,8 @@ if __name__ == '__main__':
                 })
 
                 csvfile.flush()
-                with open('./results/setcover/time_gap_setcover.pkl', 'wb') as f:
-                    pickle.dump(time_gap_track, f)
+                with open(f'./results/{args.problem}/gap_node_{args.problem}.pkl', 'wb') as f:
+                    pickle.dump([time_gap_track,node_gap_track], f)
                 m.freeProb()
 
                 print(f"  {policy['type']}:{policy['name']} {policy['seed']} - {nnodes} ({nnodes+2*(ndomchgs+ncutoffs)}) nodes {nlps} lps {stime:.2f} ({walltime:.2f} wall {proctime:.2f} proc) s. {status} gap_50 {brancher.gap_50} gap_75 {brancher.gap_75} gap_100 {brancher.gap_100} gap_200 {brancher.gap_200}")
