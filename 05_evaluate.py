@@ -160,7 +160,7 @@ if __name__ == '__main__':
     parser.add_argument(
         'problem',
         help='MILP instance type to process.',
-        choices=['setcover', 'cauctions', 'facilities', 'indset'],
+        choices=['setcover', 'cauctions', 'facilities', 'indset', 'cddesign'],
     )
     parser.add_argument(
         '-g', '--gpu',
@@ -185,7 +185,7 @@ if __name__ == '__main__':
     result_file = f"{args.problem}_{time.strftime('%Y%m%d-%H%M%S')}_time{args.limit_time}_nodes{args.limit_node}.csv"
     instances = []
     #seeds = [4, 6, 8, 10, 12]
-    seeds =  [2 ,4, 6, 8, 10]
+    seeds =  [0, 2 ,4]
     #seeds = [40]
     gcnn_models = ['baseline']
     #gcnn_models = []
@@ -226,6 +226,9 @@ if __name__ == '__main__':
         instances += [{'type': 'medium', 'path': f"data/instances/indset/transfer_1000_4/instance_{i+1}.lp"} for i in range(20)]
         instances += [{'type': 'big', 'path': f"data/instances/indset/transfer_1500_4/instance_{i+1}.lp"} for i in range(20)]
 
+    elif args.problem == 'cddesign':
+        instances += [{'type': 'small', 'path': f"../data/instances/cddesign/test/instance_{i+1}.lp"} for i in range(0, 100, 5)]
+
     else:
         raise NotImplementedError
 
@@ -235,6 +238,8 @@ if __name__ == '__main__':
         pdir = '100r_200c_0.05d'
     elif args.problem == 'facilities':
         pdir = '100_100_5'
+    elif args.problem == 'cddesign':
+        pdir = '0531'
 
     # SCIP internal brancher baselines
     for brancher in internal_branchers:
@@ -251,7 +256,7 @@ if __name__ == '__main__':
                 'type': 'ml-competitor',
                 'name': model,
                 'seed': seed,
-                'model': f'trained_models/{args.problem}/{pdir}/{model}/{seed+2}',
+                'model': f'trained_models/{args.problem}/{pdir}/{model}/{seed}',
             })
     # GCNN models
     for model in gcnn_models:
@@ -260,7 +265,7 @@ if __name__ == '__main__':
                 'type': 'gcnn',
                 'name': model,
                 'seed': seed,
-                'parameters': f'trained_models/{args.problem}/{pdir}/{model}/{seed*10}/best_params.pkl'
+                'parameters': f'trained_models/{args.problem}/{pdir}/{model}/{seed}/best_params.pkl'
                # 'parameters': f'trained_models/{args.problem}/{pdir}/{model}/{seed*20+20}/best_params.pkl'
             })
 
@@ -350,6 +355,8 @@ if __name__ == '__main__':
                 m.setIntParam('display/verblevel', 0)
                 m.readProblem(f"{instance['path']}")
                 utilities.init_scip_params(m, seed=policy['seed'])
+                if args.problem == 'cddesign':
+                    m.setIntParam('separating/maxrounds', -1)
                 m.setIntParam('timing/clocktype', 2)  # 1: CPU user seconds, 2: wall clock time
                 m.setRealParam('limits/time', time_limit)
                 m.setLongintParam('limits/totalnodes', node_limit)
@@ -405,7 +412,8 @@ if __name__ == '__main__':
                 })
 
                 csvfile.flush()
-                with open(f'./results/{args.problem}/gap_node_{args.problem}.pkl', 'wb') as f:
+                os.makedirs(f'./results/{args.problem}', exist_ok=True)
+                with open(f'./results/{args.problem}/gap_node_{args.problem}_time_limit_{args.limit_time}.pkl', 'wb') as f:
                     pickle.dump([time_gap_track,node_gap_track], f)
                 m.freeProb()
 
