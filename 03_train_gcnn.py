@@ -111,7 +111,7 @@ if __name__ == '__main__':
     parser.add_argument(
         'problem',
         help='MILP instance type to process.',
-        choices=['setcover', 'cauctions', 'facilities', 'indset'],
+        choices=['setcover', 'cauctions', 'facilities', 'indset', 'cddesign'],
     )
     parser.add_argument(
         '-m', '--model',
@@ -151,10 +151,11 @@ if __name__ == '__main__':
         'cauctions': 'cauctions/100_500',
         'facilities': 'facilities/100_100_5',
         'indset': 'indset/500_4',
+        'cddesign': 'cddesign/0602'
     }
     problem_folder = problem_folders[args.problem]
 
-    running_dir = f"trained_models/{problem_folders[args.problem]}/{args.model}/{args.seed}"
+    running_dir = f"trained_models/{problem_folder}/{args.model}/{args.seed}"
 
     os.makedirs(running_dir)
 
