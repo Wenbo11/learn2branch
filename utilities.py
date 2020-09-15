@@ -1,7 +1,7 @@
 import datetime
 import numpy as np
 import scipy.sparse as sp
-import pyscipopt as scip
+from pyscipopt import SCIP_PARAMSETTING
 import pickle
 import gzip
 
@@ -12,74 +12,222 @@ def log(str, logfile=None):
         with open(logfile, mode='a') as f:
             print(str, file=f)
 
+def set_scip(model, seed, setting):
+    if setting == 'neuips19':
+        personalize_scip(model, seed,
+                         presolver=True,
+                         separator=False,
+                         separator_root=True,
+                         propagator=True,
+                         restart=False,
+                         primal_heuristic=True,
+                         conflict=True,
+                         brancher="default",
+                         node_selector="default",
+                         diving_heuristic=True,
+                         relaxation=True,
+                         constraint=True,
+                         pricer=True,
+                         bender_decomposition=True)
+    elif setting == 'presolver_heur':
+        personalize_scip(model, seed,
+                         presolver=True,
+                         separator=False,
+                         separator_root=False,
+                         propagator=False,
+                         restart=False,
+                         primal_heuristic=True,
+                         conflict=False,
+                         brancher='default',
+                         node_selector='default',
+                         diving_heuristic=True,
+                         relaxation=True,
+                         constraint=True,
+                         pricer=True,
+                         bender_decomposition=True)
+    elif setting == 'clean':
+        personalize_scip(model, seed,
+                         presolver=False,
+                         separator=False,
+                         separator_root=False,
+                         propagator=False,
+                         restart=False,
+                         primal_heuristic=False,
+                         conflict=False,
+                         brancher='default',
+                         node_selector='default',
+                         diving_heuristic=True,
+                         relaxation=True,
+                         constraint=True,
+                         pricer=True,
+                         bender_decomposition=True)
+    elif setting == 'presolver_separoot_propagator':
+        personalize_scip(model, seed,
+                         presolver=True,
+                         separator=False,
+                         separator_root=True,
+                         propagator=True,
+                         restart=False,
+                         primal_heuristic=False,
+                         conflict=False,
+                         brancher='default',
+                         node_selector='default',
+                         diving_heuristic=True,
+                         relaxation=True,
+                         constraint=True,
+                         pricer=True,
+                         bender_decomposition=True)
+    elif setting == 'presolver_separoot_propagator_heur':
+        personalize_scip(model, seed,
+                         presolver=True,
+                         separator=False,
+                         separator_root=True,
+                         propagator=True,
+                         restart=False,
+                         primal_heuristic=True,
+                         conflict=False,
+                         brancher='default',
+                         node_selector='default',
+                         diving_heuristic=True,
+                         relaxation=True,
+                         constraint=True,
+                         pricer=True,
+                         bender_decomposition=True)
+    elif setting == 'propagator_dfs':
+        personalize_scip(model, seed,
+                         presolver=False,
+                         separator=False,
+                         separator_root=False,
+                         propagator=True,
+                         restart=False,
+                         primal_heuristic=False,
+                         conflict=False,
+                         brancher='default',
+                         node_selector='dfs',
+                         diving_heuristic=True,
+                         relaxation=True,
+                         constraint=True,
+                         pricer=True,
+                         bender_decomposition=True)
+    elif setting == 'default':
+        personalize_scip(model, seed,
+                         presolver=True,
+                         separator=True,
+                         separator_root=True,
+                         propagator=True,
+                         restart=True,
+                         primal_heuristic=True,
+                         conflict=True,
+                         brancher='default',
+                         node_selector='default',
+                         diving_heuristic=True,
+                         relaxation=True,
+                         constraint=True,
+                         pricer=True,
+                         bender_decomposition=True)
+    elif len(setting) == 12:
+        paras = [bool(int(s)) for s in setting]
+        personalize_scip(model, seed, 'default', 'default', *paras)
+    else:
+        raise NotImplementedError
 
-# def init_scip_params(model, seed, heuristics=True, presolving=True, separating=True, conflict=True):
-#
-#     seed = seed % 2147483648  # SCIP seed range
-#
-#     # set up randomization
-#     model.setBoolParam('randomization/permutevars', True)
-#     model.setIntParam('randomization/permutationseed', seed)
-#     model.setIntParam('randomization/randomseedshift', seed)
-#
-#     # separation only at root node
-#     model.setIntParam('separating/maxrounds', 0)
-#
-#     # no restart
-#     model.setIntParam('presolving/maxrestarts', 0)
-#
-#     # if asked, disable presolving
-#     if not presolving:
-#         model.setIntParam('presolving/maxrounds', 0)
-#         model.setIntParam('presolving/maxrestarts', 0)
-#
-#     # if asked, disable separating (cuts)
-#     if not separating:
-#         model.setIntParam('separating/maxroundsroot', 0)
-#
-#     # if asked, disable conflict analysis (more cuts)
-#     if not conflict:
-#         model.setBoolParam('conflict/enable', False)
-#
-#     # if asked, disable primal heuristics
-#     if not heuristics:
-#         model.setHeuristics(scip.SCIP_PARAMSETTING.OFF)
 
-def init_scip_params(model, seed, heuristics=True, presolving=True,
-                     separating_root=True, conflict=True, propagation=True, separating=False):
+def personalize_scip(model, seed,
+                     brancher='default',
+                     node_selector='default',
+                     diving_heuristic=False,
+                     relaxation=False,
+                     constraint=False,
+                     pricer=False,
+                     bender_decomposition=False,
+                     presolver=False,
+                     separator=False,
+                     separator_root=False,
+                     propagator=False,
+                     restart=False,
+                     primal_heuristic=False,
+                     conflict=False):
+    # logger.info(f'setting with brancher={brancher}, node_selector={node_selector}, presolver={presolver},'
+    #             f' separator={separator}, separator_root={separator_root}, propagator={propagator}, restart={restart},'
+    #             f'primal_heuristic={primal_heuristic}, conflict={conflict}')
 
+    # todo: add more switches
     seed = seed % 2147483648  # SCIP seed range
-
-    # set up randomization
+    # randommization
     model.setBoolParam('randomization/permutevars', True)
     model.setIntParam('randomization/permutationseed', seed)
     model.setIntParam('randomization/randomseedshift', seed)
 
-    # no restart
-    model.setIntParam('presolving/maxrestarts', 0)
-
-    # disable separation except the root
-    if not separating:
+    if not separator:
+        # separation only at root node
         model.setIntParam('separating/maxrounds', 0)
-
-    # if asked, disable separating (cuts)
-    if not separating_root:
-        model.setIntParam('separating/maxroundsroot', 0)
-        # model.setSeparating(SCIP_PARAMSETTING.OFF)
+        if not separator_root:
+            model.setIntParam('separating/maxroundsroot', 0)
+    # no restart
+    if not restart:
+        model.setIntParam('presolving/maxrestarts', 0)
 
     # if asked, disable presolving
-    if not presolving:
+    if not presolver:
         model.setIntParam('presolving/maxrounds', 0)
         model.setIntParam('presolving/maxrestarts', 0)
-        # model.setPresolve(SCIP_PARAMSETTING.OFF)
 
     # if asked, disable conflict analysis (more cuts)
     if not conflict:
         model.setBoolParam('conflict/enable', False)
 
     # if asked, disable primal heuristics
-    if not heuristics:
+    if not primal_heuristic:
         model.setHeuristics(SCIP_PARAMSETTING.OFF)
+
+    # if asked, disable propagation heuristics
+    if not propagator:
+        model.disablePropagation(False)
+
+    """
+    branchers:
+    relpscost               10000       -1    100.0%  reliability branching on pseudo cost values
+    pscost                   2000       -1    100.0%  branching on pseudo cost values
+    inference                1000       -1    100.0%  inference history branching
+    mostinf                   100       -1    100.0%  most infeasible branching
+    leastinf                   50       -1    100.0%  least infeasible branching
+    distribution                0       -1    100.0%  branching rule based on variable influence on cumulative normal distribution of row activities
+    fullstrong                  0       -1    100.0%  full strong branching
+    cloud                       0       -1    100.0%  branching rule that considers several alternative LP optima
+    lookahead                   0       -1    100.0%  full strong branching over multiple levels
+    multaggr                    0       -1    100.0%  fullstrong branching on fractional and multi-aggregated variables
+    allfullstrong           -1000       -1    100.0%  all variables full strong branching
+    vanillafullstrong       -2000       -1    100.0%  vanilla full strong branching
+    random                -100000       -1    100.0%  random variable branching
+    nodereopt            -9000000       -1    100.0%  branching rule for node reoptimization
+    """
+    buildin_branchers = ['relpscost', 'pscost', 'inference', 'mostinf', 'leastinf', 'distribution',
+                         'fullstrong', 'cloud', 'lookahead', 'multaggr', 'allfullstrong',
+                         'vanillafullstrong', 'random', 'nodereopt']
+    if brancher != 'default':
+        if brancher in buildin_branchers:
+            model.setIntParam(f"branching/{brancher}/priority", 666666)
+        else:
+            print(f"{brancher} does not exist, use the default brancher")
+
+    """
+    node selectors:
+    estimate                   200000          100  best estimate search
+    bfs                        100000            0  best first search
+    hybridestim                 50000           50  hybrid best estimate / best bound search
+    restartdfs                  10000        50000  depth first search with periodical selection of the best node
+    uct                            10            0  node selector which balances exploration and exploitation
+    dfs                             0       100000  depth first search
+    breadthfirst               -10000     -1000000  breadth first search
+    """
+    buildin_node_selectors = ['estimate', 'bfs', 'hybridestim', 'restartdfs', 'uct', 'dfs', 'breadthfirst']
+    if node_selector != 'default':
+        if node_selector in buildin_node_selectors:
+            model.setIntParam(f"nodeselection/{node_selector}/stdpriority", 666666)
+        else:
+            print(f"{node_selector} does not exist, use the default node selector")
+
+
 
 def extract_state(model, buffer=None):
     """

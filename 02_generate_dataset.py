@@ -40,45 +40,56 @@ class SamplingAgent(scip.Branchrule):
         query_expert = self.rng.rand() < self.query_expert_prob
         if query_expert:
             state = utilities.extract_state(self.model)
+            # rule out the state with incumbent value Nan/ set to 0
+            v = state[2]['values'][:, -2:]
+            if np.isnan(v[v != v].sum()):
+                state[2]['values'][:, -2:] = 0
+                print('not find incumbent value yet and set incumbent to zero')
+
             cands, *_ = self.model.getPseudoBranchCands()
             state_khalil = utilities.extract_khalil_variable_features(self.model, cands, self.khalil_root_buffer)
 
             result = self.model.executeBranchRule('vanillafullstrong', allowaddcons, domred=False)
-            cands_, scores, npriocands, bestcand, scip_result = self.model.getVanillafullstrongData()
 
-            assert result == scip.SCIP_RESULT.DIDNOTRUN
-            assert all([c1.getCol().getLPPos() == c2.getCol().getLPPos() for c1, c2 in zip(cands, cands_)])
+            # if np.isnan(state_khalil[state_khalil != state_khalil].sum()):
+            if True:
+                # print('Drop the node since khalil state is invalid')
 
-            action_set = [c.getCol().getLPPos() for c in cands]
-            expert_action = action_set[bestcand]
+                cands_, scores, npriocands, bestcand, scip_result = self.model.getVanillafullstrongData()
 
-            data = [state, state_khalil, expert_action, action_set, scores]
+                assert result == scip.SCIP_RESULT.DIDNOTRUN
+                assert all([c1.getCol().getLPPos() == c2.getCol().getLPPos() for c1, c2 in zip(cands, cands_)])
 
-            # Do not record inconsistent scores. May happen if SCIP was early stopped (time limit).
-            if not any([s < 0 for s in scores]):
+                action_set = [c.getCol().getLPPos() for c in cands]
+                expert_action = action_set[bestcand]
 
-                filename = f'{self.out_dir}/sample_{self.episode}_{self.sample_counter}.pkl'
-                with gzip.open(filename, 'wb') as f:
-                    pickle.dump({
+                data = [state, state_khalil, expert_action, action_set, scores]
+
+                # Do not record inconsistent scores. May happen if SCIP was early stopped (time limit).
+                if not any([s < 0 for s in scores]):
+
+                    filename = f'{self.out_dir}/sample_{self.episode}_{self.sample_counter}.pkl'
+                    with gzip.open(filename, 'wb') as f:
+                        pickle.dump({
+                            'episode': self.episode,
+                            'instance': self.instance,
+                            'seed': self.seed,
+                            'node_number': self.model.getCurrentNode().getNumber(),
+                            'node_depth': self.model.getCurrentNode().getDepth(),
+                            'data': data,
+                            }, f)
+
+                    self.out_queue.put({
+                        'type': 'sample',
                         'episode': self.episode,
                         'instance': self.instance,
                         'seed': self.seed,
                         'node_number': self.model.getCurrentNode().getNumber(),
                         'node_depth': self.model.getCurrentNode().getDepth(),
-                        'data': data,
-                        }, f)
+                        'filename': filename,
+                    })
 
-                self.out_queue.put({
-                    'type': 'sample',
-                    'episode': self.episode,
-                    'instance': self.instance,
-                    'seed': self.seed,
-                    'node_number': self.model.getCurrentNode().getNumber(),
-                    'node_depth': self.model.getCurrentNode().getDepth(),
-                    'filename': filename,
-                })
-
-                self.sample_counter += 1
+                    self.sample_counter += 1
 
         # if exploration and expert policies are the same, prevent running it twice
         if not query_expert or (not self.follow_expert and self.exploration_policy != 'vanillafullstrong'):
@@ -114,10 +125,11 @@ def make_samples(in_queue, out_queue, args):
         m = scip.Model()
         m.setIntParam('display/verblevel', 0)
         m.readProblem(f'{instance}')
-        if args.problem == 'cddesign':
-            utilities.init_scip_params(m, seed, True, True, True, True, True, True)
-        else:
-            utilities.init_scip_params(m, seed, True, True, True, True, True, False)
+        utilities.set_scip(m, seed, 'propagator_dfs')
+        # if args.problem == 'cddesign' or 'setcover':
+            # utilities.init_scip_params(m, seed, True, True, True, True, True, True)
+        # else:
+            # utilities.init_scip_params(m, seed, True, True, True, True, True, False)
         m.setIntParam('timing/clocktype', 2)
         m.setRealParam('limits/time', time_limit)
 
@@ -140,7 +152,6 @@ def make_samples(in_queue, out_queue, args):
         m.setBoolParam('branching/vanillafullstrong/collectscores', True)
         m.setBoolParam('branching/vanillafullstrong/donotbranch', True)
         m.setBoolParam('branching/vanillafullstrong/idempotent', True)
-
 
         out_queue.put({
             'type': 'start',
@@ -321,21 +332,21 @@ if __name__ == '__main__':
 
     print(f"seed {args.seed}")
 
-    train_size = 50000
-    valid_size = 10000
-    test_size = 10000
+    train_size = 500
+    valid_size = 100
+    test_size = 100
     exploration_strategy = 'pscost'
     node_record_prob = 0.05
     time_limit = 3600
 
     if args.problem == 'setcover':
-        instances_train = glob.glob('data/instances/setcover/train_100r_200c_0.05d_1mc_0se/*/*.lp')
-        instances_valid = glob.glob('data/instances/setcover/valid_100r_200c_0.05d_1mc_0se/*/*.lp')
-        instances_test = glob.glob('data/instances/setcover/test_100r_200c_0.05d_1mc_0se/*/*.lp')
+        instances_train = glob.glob('/Users/cwb/Projects/PycharmProjects/scip_policy_control/data/instances/backbone/setcover_0.05d_100mc_1se/train_500r_1000c/*.lp')
+        instances_valid = glob.glob('/Users/cwb/Projects/PycharmProjects/scip_policy_control/data/instances/backbone/setcover_0.05d_100mc_1se/valid_500r_1000c/*.lp')
+        # instances_test = glob.glob('data/instances/setcover/test_100r_200c_0.05d_1mc_0se/*/*.lp')
         # instances_train = glob.glob('data/instances/setcover/train_100r_200c_0.05d/*.lp')
         # instances_valid = glob.glob('data/instances/setcover/valid_500r_1000c_0.05d/*.lp')
         # instances_test = glob.glob('data/instances/setcover/test_500r_1000c_0.05d/*.lp')
-        out_dir = 'data/samples/setcover/100r_200c_0.05d'
+        out_dir = 'data/samples/setcover/500r_1000c_0.05d_backbone'
 
     elif args.problem == 'cauctions':
         instances_train = glob.glob('data/instances/cauctions/train_100_500/*.lp')
@@ -366,7 +377,7 @@ if __name__ == '__main__':
 
     print(f"{len(instances_train)} train instances for {train_size} samples")
     print(f"{len(instances_valid)} validation instances for {valid_size} samples")
-    print(f"{len(instances_test)} test instances for {test_size} samples")
+    # print(f"{len(instances_test)} test instances for {test_size} samples")
 
     # create output directory, throws an error if it already exists
     os.makedirs(out_dir, exist_ok=True)
@@ -383,8 +394,8 @@ if __name__ == '__main__':
                     query_expert_prob=node_record_prob,
                     time_limit=time_limit, args=args)
 
-    rng = np.random.RandomState(args.seed + 2)
-    collect_samples(instances_test, out_dir + '/test', rng, test_size,
-                    args.njobs, exploration_policy=exploration_strategy,
-                    query_expert_prob=node_record_prob,
-                    time_limit=time_limit, args=args)
+    # rng = np.random.RandomState(args.seed + 2)
+    # collect_samples(instances_test, out_dir + '/test', rng, test_size,
+    #                 args.njobs, exploration_policy=exploration_strategy,
+    #                 query_expert_prob=node_record_prob,
+    #                 time_limit=time_limit, args=args)
