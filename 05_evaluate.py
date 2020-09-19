@@ -102,7 +102,13 @@ class PolicyBranching(scip.Branchrule):
                 best_var = candidate_vars[0]
 
             elif self.policy_type == 'gcnn':
-                state = utilities.extract_state(self.model, self.state_buffer)
+                #state = utilities.extract_state(self.model, self.state_buffer)
+                state = utilities.extract_state(self.model)
+
+                v = state[2]['values'][:, -2:]
+                if np.isnan(v[v != v].sum()):
+                    state[2]['values'][:, -2:] = 0
+                    # print('not find incumbent value yet and set incumbent to zero')
 
                 # convert state to tensors
                 c, e, v = state
@@ -185,13 +191,13 @@ if __name__ == '__main__':
     result_file = f"{args.problem}_{time.strftime('%Y%m%d-%H%M%S')}_time{args.limit_time}_nodes{args.limit_node}.csv"
     instances = []
     #seeds = [4, 6, 8, 10, 12]
-    seeds =  [0, 2 ,4]
+    seeds =  [0]
     #seeds = [40]
     gcnn_models = ['baseline']
     #gcnn_models = []
     #other_models = ['extratrees_gcnn_agg', 'lambdamart_khalil', 'svmrank_khalil']
-    other_models = ['svmrank_khalil']
-    #other_models = []
+    #other_models = ['svmrank_khalil']
+    other_models = []
     #internal_branchers = ['relpscost']
     internal_branchers = []
     #time_limit = 3600
@@ -202,7 +208,7 @@ if __name__ == '__main__':
         #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_100r_200c_0.1d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
         #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_100r_200c_0.2d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
         #instances += [{'type': 'small', 'path': f"../data/instances/setcover/updated_data/test_150r_300c_0.1d_0mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(100)]
-        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.1d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(20)]
+        instances += [{'type': 'small', 'path': f"../data/instances/setcover/test_100r_200c_0.1d_1mc_0se/instance_{i+1}/instance_{i+1}.lp"} for i in range(1)]
         # instances += [{'type': 'small', 'path': f"data/instances/setcover/transfer_500r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
         # instances += [{'type': 'medium', 'path': f"data/instances/setcover/transfer_1000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
         # instances += [{'type': 'big', 'path': f"data/instances/setcover/transfer_2000r_1000c_0.05d/instance_{i+1}.lp"} for i in range(20)]
@@ -227,7 +233,7 @@ if __name__ == '__main__':
         instances += [{'type': 'big', 'path': f"data/instances/indset/transfer_1500_4/instance_{i+1}.lp"} for i in range(20)]
 
     elif args.problem == 'cddesign':
-        instances += [{'type': 'small', 'path': f"../data/instances/cddesign/test/instance_{i+1}.lp"} for i in range(0, 100, 5)]
+        instances += [{'type': 'small', 'path': f"./data/instances/cddesign/test/instance_{i+1}.lp"} for i in range(0, 5, 5)]
 
     else:
         raise NotImplementedError
@@ -354,7 +360,8 @@ if __name__ == '__main__':
                 m = scip.Model()
                 m.setIntParam('display/verblevel', 0)
                 m.readProblem(f"{instance['path']}")
-                utilities.init_scip_params(m, seed=policy['seed'])
+                # utilities.init_scip_params(m, seed=policy['seed'])
+                utilities.set_scip(m, seed, 'propagator_dfs')
                 if args.problem == 'cddesign':
                     m.setIntParam('separating/maxrounds', -1)
                 m.setIntParam('timing/clocktype', 2)  # 1: CPU user seconds, 2: wall clock time
