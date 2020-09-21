@@ -123,6 +123,8 @@ class PolicyBranching(scip.Branchrule):
 
                 var_logits = self.policy(state, tf.convert_to_tensor(False)).numpy().squeeze(0)
 
+                assert not np.isnan(var_logits[var_logits != var_logits].sum()), "NN output None"
+                # assert
                 candidate_scores = var_logits[candidate_mask]
                 best_var = candidate_vars[candidate_scores.argmax()]
 

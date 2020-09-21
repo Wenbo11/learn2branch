@@ -351,7 +351,7 @@ if __name__ == '__main__':
         # instances_train = glob.glob('data/instances/setcover/train_100r_200c_0.05d/*.lp')
         # instances_valid = glob.glob('data/instances/setcover/valid_500r_1000c_0.05d/*.lp')
         # instances_test = glob.glob('data/instances/setcover/test_500r_1000c_0.05d/*.lp')
-        out_dir = 'data/samples/setcover/500r_1000c_0.05d_backbone'
+        out_dir = 'data/samples/setcover/500r_1000c_0.05d_backbone_noincumbent'
 
     elif args.problem == 'cauctions':
         instances_train = glob.glob('data/instances/cauctions/train_100_500/*.lp')

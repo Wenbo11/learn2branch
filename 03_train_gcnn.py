@@ -136,9 +136,9 @@ if __name__ == '__main__':
     ### HYPER PARAMETERS ###
     max_epochs = 1000
     epoch_size = 312
-    batch_size = 32
-    pretrain_batch_size = 128
-    valid_batch_size = 128
+    batch_size = 4
+    pretrain_batch_size = 4
+    valid_batch_size = 4
     lr = 0.001
     patience = 10
     early_stopping = 20
@@ -147,7 +147,7 @@ if __name__ == '__main__':
     valid_ncands_limit = np.inf
 
     problem_folders = {
-        'setcover': 'setcover/500r_1000c_0.05d',
+        'setcover': 'setcover/100r_200c_0.05d',
         'cauctions': 'cauctions/100_500',
         'facilities': 'facilities/100_100_5',
         'indset': 'indset/500_4',
@@ -157,7 +157,7 @@ if __name__ == '__main__':
 
     running_dir = f"trained_models/{problem_folder}/{args.model}/{args.seed}"
 
-    os.makedirs(running_dir)
+    os.makedirs(running_dir, exist_ok=True)
 
     ### LOG ###
     logfile = os.path.join(running_dir, 'log.txt')
