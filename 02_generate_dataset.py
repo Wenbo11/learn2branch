@@ -41,10 +41,15 @@ class SamplingAgent(scip.Branchrule):
         if query_expert:
             state = utilities.extract_state(self.model)
             # rule out the state with incumbent value Nan/ set to 0
-            v = state[2]['values'][:, -2:]
-            if np.isnan(v[v != v].sum()):
-                state[2]['values'][:, -2:] = 0
-                print('not find incumbent value yet and set incumbent to zero')
+            if True:
+                # print(f"before {state[2]['values'].shape}")
+                state[2]['values'] = state[2]['values'][:, :-2]
+                # print(f"after {state[2]['values'].shape}")
+            else:
+                v = state[2]['values'][:, -2:]
+                if np.isnan(v[v != v].sum()):
+                    state[2]['values'][:, -2:] = 0
+                    print('not find incumbent value yet and set incumbent to zero')
 
             cands, *_ = self.model.getPseudoBranchCands()
             state_khalil = utilities.extract_khalil_variable_features(self.model, cands, self.khalil_root_buffer)
