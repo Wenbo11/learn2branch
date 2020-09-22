@@ -131,6 +131,12 @@ if __name__ == '__main__':
         type=int,
         default=0,
     )
+    parser.add_argument(
+        '-vnf', '--varnfeat',
+        help='number of variable features.',
+        type=int,
+        default=19,
+    )
     args = parser.parse_args()
 
     ### HYPER PARAMETERS ###
@@ -236,7 +242,7 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.abspath(f'models/{args.model}'))
     import model
     importlib.reload(model)
-    model = model.GCNPolicy()
+    model = model.GCNPolicy(args.var_nfeats)
     del sys.path[0]
 
     ### TRAINING LOOP ###
